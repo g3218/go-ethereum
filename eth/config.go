@@ -59,11 +59,13 @@ var DefaultConfig = Config{
 		GasPrice: big.NewInt(params.GWei),
 		Recommit: 3 * time.Second,
 	},
-	TxPool: core.DefaultTxPoolConfig,
+	TxPool:    core.DefaultTxPoolConfig,
+	RPCGasCap: 25000000,
 	GPO: gasprice.Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
+	RPCTxFeeCap: 1, // 1 ether
 }
 
 func init() {
@@ -104,6 +106,8 @@ type Config struct {
 
 	NoPruning  bool // Whether to disable pruning and flush everything to disk
 	NoPrefetch bool // Whether to disable prefetching and only load state on demand
+
+	TxLookupLimit uint64 `toml:",omitempty"` // The maximum number of blocks from head whose tx indices are reserved.
 
 	// Whitelist of required block number -> hash values to accept
 	Whitelist map[uint64]common.Hash `toml:"-"`
@@ -155,17 +159,15 @@ type Config struct {
 	EVMInterpreter string
 
 	// RPCGasCap is the global gas cap for eth-call variants.
-	RPCGasCap *big.Int `toml:",omitempty"`
+	RPCGasCap uint64 `toml:",omitempty"`
+
+	// RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for
+	// send-transction variants. The unit is ether.
+	RPCTxFeeCap float64 `toml:",omitempty"`
 
 	// Checkpoint is a hardcoded checkpoint which can be nil.
 	Checkpoint *params.TrustedCheckpoint `toml:",omitempty"`
 
 	// CheckpointOracle is the configuration for checkpoint oracle.
 	CheckpointOracle *params.CheckpointOracleConfig `toml:",omitempty"`
-
-	// Istanbul block override (TODO: remove after the fork)
-	OverrideIstanbul *big.Int `toml:",omitempty"`
-
-	// MuirGlacier block override (TODO: remove after the fork)
-	OverrideMuirGlacier *big.Int `toml:",omitempty"`
 }

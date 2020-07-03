@@ -63,14 +63,7 @@ func ExpFactor(logOffset Fixed64) ExpirationFactor {
 // Value calculates the expired value based on a floating point base and integer
 // power-of-2 exponent. This function should be used by multi-value expired structures.
 func (e ExpirationFactor) Value(base float64, exp uint64) float64 {
-	res := base / e.Factor
-	if exp > e.Exp {
-		res *= float64(uint64(1) << (exp - e.Exp))
-	}
-	if exp < e.Exp {
-		res /= float64(uint64(1) << (e.Exp - exp))
-	}
-	return res
+	return base / e.Factor * math.Pow(2, float64(int64(exp-e.Exp)))
 }
 
 // value calculates the value at the given moment.
@@ -92,7 +85,10 @@ func (e *ExpiredValue) Add(amount int64, logOffset Fixed64) int64 {
 		e.Exp = integer
 	}
 	if base >= 0 || uint64(-base) <= e.Base {
-		e.Base += uint64(base)
+		// This is a temporary fix to circumvent a golang
+		// uint conversion issue on arm64, which needs to
+		// be investigated further. FIXME
+		e.Base = uint64(int64(e.Base) + int64(base))
 		return amount
 	}
 	net := int64(-float64(e.Base) / factor)
